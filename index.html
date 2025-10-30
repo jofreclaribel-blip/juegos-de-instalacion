@@ -1,0 +1,308 @@
+!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Juego: Informática — 6 Niveles</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    :root{--accent:#ec4899}
+    html,body{height:100%}
+    body{font-family:Inter,ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background:#071028;}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.02));backdrop-filter: blur(6px);border-radius:14px;box-shadow:0 10px 30px rgba(2,6,23,0.6);}
+    .btn{background:var(--accent);color:#fff;padding:.6rem 1rem;border-radius:12px;font-weight:600}
+    .op-btn{background:rgba(255,255,255,0.03);border-radius:10px;padding:.6rem 1rem;cursor:pointer;border:1px solid rgba(255,255,255,0.04)}
+    .op-btn:hover{transform:translateY(-3px)}
+    /* Arcade animated background shapes */
+    #bgCanvas{position:fixed;left:0;top:0;width:100%;height:100%;z-index:0}
+    .ui{position:relative;z-index:2}
+    .hidden{display:none}
+    .meter{height:10px;background:rgba(255,255,255,0.08);border-radius:999px;overflow:hidden}
+    .meter > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#f59e0b);width:0%}
+    .img-interactive{width:160px;height:120px;border-radius:10px;overflow:hidden;background:linear-gradient(180deg,#0f1724,#071028);display:flex;align-items:center;justify-content:center}
+    .small{font-size:.85rem}
+  </style>
+</head>
+<body>
+  <canvas id="bgCanvas"></canvas>
+
+  <div class="ui min-h-screen flex items-center justify-center p-6">
+    <div class="w-full max-w-4xl card p-6">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h1 class="text-2xl font-bold text-white">🎮 Quiz Informática — 6 Niveles</h1>
+          <p class="text-sm text-gray-300">30 preguntas · 6 niveles · 30s por pregunta · Música arcade · Imágenes interactivas</p>
+        </div>
+        <div class="text-right">
+          <div id="levelDisplay" class="text-white font-semibold">Nivel 1</div>
+          <div id="scoreDisplay" class="text-gray-300 small">Puntaje nivel: 0 · Total: 0</div>
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="col-span-2">
+          <div id="questionCard" class="p-4 rounded-lg border border-white/5">
+            <div class="flex items-center justify-between mb-2">
+              <div class="text-sm text-gray-300"><span id="progressText">Pregunta 1 de 30</span></div>
+              <div class="w-48 meter"><i id="timeBar"></i></div>
+            </div>
+
+            <h2 id="questionText" class="text-lg text-white font-semibold mb-4">Presioná Comenzar para iniciar</h2>
+
+            <div id="options" class="grid grid-cols-1 gap-3"></div>
+
+            <div class="mt-4 flex items-center justify-between">
+              <div class="text-sm text-gray-300">Tiempo por pregunta: <span id="timeSetting">30s</span></div>
+              <div>
+                <button id="startBtn" class="btn">Comenzar</button>
+                <button id="pauseBtn" class="ml-2 btn hidden">Pausa</button>
+                <button id="nextBtn" class="ml-2 btn hidden">Siguiente</button>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="mt-4 p-3 rounded-lg border border-white/5 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <div class="img-interactive" id="imgArea" title="Imagen interactiva: hacé click"> 
+                <!-- SVG placeholder -->
+                <svg id="imgSVG" width="120" height="90" viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg"></svg>
+              </div>
+              <div>
+                <div id="hint" class="text-sm text-gray-300">Imagen interactiva: tocá para animar</div>
+                <div id="tag" class="text-xs text-white/70">Etiqueta: --</div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div id="levelScore" class="text-white font-bold text-lg">Nivel: 0/5</div>
+              <div id="totalScore" class="text-gray-300 small">Total: 0/30</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div>
+          <div class="p-3 rounded-lg border border-white/5 mb-4">
+            <h3 class="text-white font-semibold">Controles</h3>
+            <p class="text-sm text-gray-300 mt-2">Seleccioná la respuesta. Tenés 30s por pregunta.</p>
+            <div class="mt-3">
+              <label class="text-sm text-gray-300">Volumen</label>
+              <input id="vol" type="range" min="0" max="1" step="0.01" value="0.6" class="w-full">
+            </div>
+            <div class="mt-3">
+              <label class="text-sm text-gray-300">Velocidad música</label>
+              <input id="tempo" type="range" min="0.6" max="1.6" step="0.05" value="1" class="w-full">
+            </div>
+            <div class="mt-3">
+              <button id="restartBtn" class="btn w-full mt-2">Reiniciar todo</button>
+            </div>
+          </div>
+
+          <div class="p-3 rounded-lg border border-white/5">
+            <h3 class="text-white font-semibold">Resumen</h3>
+            <div id="summary" class="text-sm text-gray-300 mt-2">
+              Nivel actual: <span id="summaryLevel">1</span><br>
+              Preguntas restantes en nivel: <span id="leftInLevel">5</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Result modal -->
+      <div id="resultModal" class="hidden fixed inset-0 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-lg text-center">
+          <h2 id="resultTitle" class="text-2xl font-bold mb-2">Resultado</h2>
+          <p id="resultBody" class="mb-4">Detalle</p>
+          <div class="flex gap-3 justify-center">
+            <button id="playAgainBtn" class="btn">Jugar de nuevo</button>
+            <button id="downloadBtn" class="btn" style="background:#06b6d4">Descargar resultados</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    /*************** PREGUNTAS (30) ****************/
+    const QUESTIONS = [
+      // Nivel 1 - Básico
+      {q:'¿Qué es un sistema operativo?', opts:['Programa que gestiona hardware y software','Un disco duro','Una extensión de archivo'], a:0, tag:'SO'},
+      {q:'¿Qué es una imagen ISO?', opts:['Una foto','Copia exacta de un disco','Un tipo de puerto'], a:1, tag:'ISO'},
+      {q:'¿Cuál es más rápido?', opts:['HDD','SSD','Los mismos'], a:1, tag:'SSD'},
+      {q:'¿Para qué sirve un cable SATA?', opts:['Conectar discos al motherboard','Transmitir audio','Conectar la impresora'], a:0, tag:'SATA'},
+      {q:'¿Qué hace VirtualBox?', opts:['Crear máquinas virtuales','Editar fotos','Formatear discos'], a:0, tag:'VM'},
+      // Nivel 2 - Intermedio
+      {q:'¿Qué significa actualizar el S.O.?', opts:['Instalar funciones y parches','Eliminar archivos','Instalar un nuevo disco'], a:0, tag:'UPDATE'},
+      {q:'¿Qué es una copia de seguridad?', opts:['Duplicado de datos para protegerlos','Un archivo ejecutable','.exe'], a:0, tag:'BACKUP'},
+      {q:'¿Cuál extensión es de texto?', opts:['.txt','.mp3','.png'], a:0, tag:'EXT'},
+      {q:'¿Qué formato permite archivos grandes y es moderno?', opts:['FAT32','NTFS','exFAT'], a:2, tag:'FS'},
+      {q:'¿Qué es una partición?', opts:['División lógica del disco','Un programa','Una extensión'], a:0, tag:'PART'},
+      // Nivel 3 - Medio/Avanzado
+      {q:'Ventaja principal de SSD vs HDD?', opts:['Mayor capacidad','Mayor velocidad y menor latencia','Menor costo por GB'], a:1, tag:'SSD2'},
+      {q:'NTFS soporta permisos y cifrado?', opts:['Sí','No','Solo en Linux'], a:0, tag:'NTFS'},
+      {q:'¿Cuál tiene límite de archivo de 4GB?', opts:['FAT32','NTFS','exFAT'], a:0, tag:'FAT32'},
+      {q:'¿Qué herramienta se usa para crear una imagen ISO?', opts:['Rufus o programas de creación de ISOs','Word','Photoshop'], a:0, tag:'ISO2'},
+      {q:'¿Qué es una máquina virtual?', opts:['Un ordenador físico','Un entorno emulado con S.O. independiente','Un cable especial'], a:1, tag:'VM2'},
+      // Nivel 4 - Avanzado
+      {q:'¿Por qué particionar un disco?', opts:['Separar datos y sistema, múltiples S.O.','Para acelerar la CPU','Para cambiar la tarjeta gráfica'], a:0, tag:'PART2'},
+      {q:'¿Qué es exFAT recomendado para?', opts:['Unidades flash y compatibilidad entre S.O.','Solo Linux','Solo Windows XP'], a:0, tag:'exFAT'},
+      {q:'¿Qué significa actualizar software de una app?', opts:['Instalar mejoras y parches','Formatear el disco','Instalar otro S.O.'], a:0, tag:'APPUP'},
+      {q:'¿Qué hace una copia de seguridad incremental?', opts:['Copia solo lo nuevo desde la última copia','Borra todo','Copia todo siempre'], a:0, tag:'INCR'},
+      {q:'¿Qué interfaz conecta SSDs NVMe?', opts:['SATA','PCIe','USB'], a:1, tag:'NVMe'},
+      // Nivel 5 - Experto
+      {q:'¿Qué es el MBR en particiones?', opts:['Master Boot Record','Multipart Backup Record','Main Boot Record (equivalente)'], a:0, tag:'MBR'},
+      {q:'¿Cuál es una ventaja de NTFS sobre FAT32?', opts:['Soporte para permisos y archivos grandes','Mayor compatibilidad con dispositivos antiguos','Menor seguridad'], a:0, tag:'NTFS2'},
+      {q:'¿Qué herramienta virtual se usa en línea de comandos para crear discos?', opts:['dd (Linux)','Notepad','Explorer'], a:0, tag:'DD'},
+      {q:'¿Qué es un snapshot en VM?', opts:['Estado guardado de una VM en un momento','Un tipo de disco','Una extensión de imagen'], a:0, tag:'SNAP'},
+      {q:'¿Cuál sistema de archivos es más antiguo?', opts:['exFAT','NTFS','FAT32'], a:2, tag:'FAT32_OLD'},
+      // Nivel 6 - Master
+      {q:'¿Por qué elegir GPT sobre MBR?', opts:['Soporta discos grandes y más particiones','Es más lento','Solo para SSDs'], a:0, tag:'GPT'},
+      {q:'¿Qué diferencia hay entre copia de seguridad y respaldo?', opts:['Respaldo suele incluir verificación y políticas; copia puede ser básica','No hay diferencia','Respaldo borra archivos'], a:0, tag:'BACK2'},
+      {q:'¿Qué significa "hot-swap" para discos?', opts:['Cambiar discos sin apagar el sistema','Respaldar en caliente','Formatear sin reiniciar'], a:0, tag:'HOT'},
+      {q:'¿Qué tipo de partición reserva Windows para arranque?', opts:['Partición EFI/Reservada del sistema','Partición de datos','Partición temporal'], a:0, tag:'EFI'},
+      {q:'¿Qué es un cable SATA III velocidad típica?', opts:['6 Gbps','1 Gbps','12 Gbps'], a:0, tag:'SATA3'}
+    ];
+    /*************** ESTADO DEL JUEGO ****************/
+    let currentIndex = 0; // 0..29
+    const perLevel = 5;
+    const levels = 6;
+    let levelScores = Array(levels).fill(0);
+    let totalScore = 0;
+    let timer = null;
+    const TIME_PER_QUESTION = 30; // segundos
+    let timeLeft = TIME_PER_QUESTION;
+    let volNode = 0.6;
+
+    /*************** ELEMENTOS DOM ****************/
+    const qText = document.getElementById('questionText');
+    const optsEl = document.getElementById('options');
+    const progressText = document.getElementById('progressText');
+    const timeBar = document.getElementById('timeBar');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const levelDisplay = document.getElementById('levelDisplay');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const levelScoreEl = document.getElementById('levelScore');
+    const totalScoreEl = document.getElementById('totalScore');
+    const leftInLevelEl = document.getElementById('leftInLevel');
+    const summaryLevel = document.getElementById('summaryLevel');
+    const imgSVG = document.getElementById('imgSVG');
+    const tagEl = document.getElementById('tag');
+    const vol = document.getElementById('vol');
+    const tempo = document.getElementById('tempo');
+    const resultModal = document.getElementById('resultModal');
+    const resultTitle = document.getElementById('resultTitle');
+    const resultBody = document.getElementById('resultBody');
+    const playAgainBtn = document.getElementById('playAgainBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    /*************** AUDIO (WebAudio simple chiptune + SFX) ****************/
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AudioCtx();
+    let masterGain = audioCtx.createGain(); masterGain.gain.value = vol.value; masterGain.connect(audioCtx.destination);
+    vol.addEventListener('input', ()=>{masterGain.gain.value = vol.value});
+
+    function playTone(freq, duration=0.12, type='sine'){
+      const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+      o.type = type; o.frequency.value = freq; g.gain.value = 0.0001;
+      o.connect(g); g.connect(masterGain);
+      o.start();
+      g.gain.exponentialRampToValueAtTime(0.4, audioCtx.currentTime+0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+duration);
+      setTimeout(()=>{o.stop()}, duration*1000+50);
+    }
+    function playCorrect(){ playTone(880,0.18,'square'); playTone(1320,0.12,'square'); }
+    function playWrong(){ playTone(220,0.25,'sawtooth'); }
+
+    // background chiptune loop using scheduled notes
+    let bgInterval=null; function startBgMusic(){ if(bgInterval) return; let tempoVal = parseFloat(tempo.value); let i=0; const melody=[440,0,660,880,660,440,0,330]; bgInterval=setInterval(()=>{ if(audioCtx.state!=='running') audioCtx.resume(); const n = melody[i%melody.length]; if(n) playTone(n,0.12,'square'); i++; }, 350/tempoVal); }
+    function stopBgMusic(){ if(bgInterval){ clearInterval(bgInterval); bgInterval=null; } }
+    tempo.addEventListener('input', ()=>{ if(bgInterval){ stopBgMusic(); startBgMusic(); } });
+
+    /*************** BACKGROUND CANVAS ANIMATIONS ****************/
+    const bg = document.getElementById('bgCanvas'); const ctx = bg.getContext('2d'); function resizeBG(){ bg.width = innerWidth; bg.height = innerHeight; }
+    window.addEventListener('resize', resizeBG); resizeBG();
+    const shapes=[]; for(let i=0;i<30;i++){ shapes.push({x:Math.random()*bg.width,y:Math.random()*bg.height, vx:(Math.random()-0.5)*1.2, vy:(Math.random()-0.5)*0.6, s:6+Math.random()*22, c: ['#06b6d4','#ec4899','#f59e0b'][Math.floor(Math.random()*3)], r:Math.random()*Math.PI*2}); }
+    function renderBG(){ ctx.clearRect(0,0,bg.width,bg.height); shapes.forEach(s=>{ s.x+=s.vx; s.y+=s.vy; s.r+=0.02; if(s.x< -50) s.x=bg.width+50; if(s.x>bg.width+50) s.x=-50; if(s.y< -50) s.y=bg.height+50; if(s.y>bg.height+50) s.y=-50; ctx.save(); ctx.translate(s.x,s.y); ctx.rotate(s.r); // draw retro pixel shape
+      ctx.fillStyle=s.c; for(let k=0;k<5;k++){ ctx.fillRect(-s.s/2 + k*4, -s.s/2, s.s/3, s.s/3); }
+      ctx.restore(); }); requestAnimationFrame(renderBG); }
+    renderBG();
+
+    /*************** INTERACTIVE IMAGE SVGS ****************/
+    function drawSVGForTag(tag){ // draw simple illustrative SVG per tag
+      imgSVG.innerHTML=''; tagEl.textContent = 'Etiqueta: '+tag;
+      if(tag.includes('SSD')){
+        imgSVG.innerHTML = `<rect x="10" y="20" width="100" height="50" rx="6" fill="#0ea5a4" stroke="#fff" opacity="0.9"/> <text x="60" y="50" text-anchor="middle" fill="#02111a" font-size="12">SSD</text>`;
+      } else if(tag.includes('SATA')){
+        imgSVG.innerHTML = `<rect x="5" y="18" width="20" height="18" rx="3" fill="#ec4899"/><rect x="30" y="18" width="70" height="18" rx="3" fill="#06b6d4"/><text x="60" y="30" text-anchor="middle" fill="#02111a" font-size="10">Cable SATA</text>`;
+      } else if(tag.includes('ISO')){
+        imgSVG.innerHTML = `<circle cx="60" cy="38" r="26" fill="#f59e0b"/><text x="60" y="42" text-anchor="middle" fill="#02111a" font-size="12">ISO</text>`;
+      } else if(tag.includes('VM')){
+        imgSVG.innerHTML = `<rect x="12" y="18" width="96" height="46" rx="6" fill="#8b5cf6"/><circle cx="36" cy="40" r="6" fill="#fff"/><text x="60" y="44" text-anchor="middle" fill="#fff" font-size="10">VM</text>`;
+      } else if(tag.includes('NTFS')||tag.includes('FAT')||tag.includes('exFAT')){
+        imgSVG.innerHTML = `<rect x="8" y="16" width="104" height="52" rx="6" fill="#06b6d4"/><text x="60" y="44" text-anchor="middle" fill="#02111a" font-size="12">FS</text>`;
+      } else {
+        imgSVG.innerHTML = `<rect x="12" y="18" width="96" height="46" rx="6" fill="#94a3b8"/><text x="60" y="44" text-anchor="middle" fill="#02111a" font-size="11">${tag}</text>`;
+      }
+    }
+    document.getElementById('imgArea').addEventListener('click', ()=>{ // small bounce animation + sound
+      playTone(880,0.08,'square'); const el = document.getElementById('imgArea'); el.animate([{transform:'scale(1)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],{duration:350}); });
+
+    /*************** LÓGICA DE JUEGO ****************/
+    function updateDisplays(){ const lvl = Math.floor(currentIndex/perLevel)+1; levelDisplay.textContent = 'Nivel '+lvl; scoreDisplay.textContent = `Puntaje nivel: ${levelScores[lvl-1]} · Total: ${totalScore}`; levelScoreEl.textContent = `Nivel: ${levelScores[lvl-1]}/${perLevel}`; totalScoreEl.textContent = `Total: ${totalScore}/30`; summaryLevel.textContent = lvl; leftInLevelEl.textContent = perLevel - (currentIndex%perLevel); progressText.textContent = `Pregunta ${currentIndex+1} de ${QUESTIONS.length}`; }
+
+    function showQuestion(){ clearOptions(); if(currentIndex>=QUESTIONS.length){ endGame(); return; } const q = QUESTIONS[currentIndex]; qText.textContent = q.q; drawSVGForTag(q.tag); updateDisplays(); renderOptions(q.opts); resetTimer(); }
+
+    function clearOptions(){ optsEl.innerHTML=''; }
+
+    function renderOptions(opts){ optsEl.innerHTML=''; opts.forEach((o,idx)=>{ const b = document.createElement('button'); b.className='op-btn w-full text-left'; b.innerHTML = `<div class="flex items-center justify-between"><span>${String.fromCharCode(65+idx)}. ${o}</span><span class="text-gray-300 small"> </span></div>`; b.onclick=()=>answer(idx); optsEl.appendChild(b); }); }
+
+    function answer(choice){ stopTimer(); const q = QUESTIONS[currentIndex]; const lvlIdx = Math.floor(currentIndex/perLevel);
+      if(choice === q.a){ // correcto
+        levelScores[lvlIdx]++; totalScore++; playCorrect(); showFeedback(true);
+      } else { playWrong(); showFeedback(false); }
+      updateDisplays(); // show feedback and auto-advance
+      Array.from(optsEl.children).forEach((btn,i)=>{ if(i===q.a) btn.style.border='2px solid rgba(34,197,94,0.6)'; if(i===choice && i!==q.a) btn.style.border='2px solid rgba(239,68,68,0.6)'; btn.disabled=true; });
+      setTimeout(()=>{ currentIndex++; if(currentIndex%perLevel===0){ // level finished
+          // brief modal or notification
+        }
+        if(currentIndex<QUESTIONS.length){ showQuestion(); } else { endGame(); }
+      },1000);
+    }
+
+    function showFeedback(ok){ const el = document.getElementById('resultBody'); if(ok) el.textContent='¡Correcto!'; else el.textContent='Incorrecto'; }
+
+    /*************** TIMER ****************/
+    function resetTimer(){ timeLeft = TIME_PER_QUESTION; updateTimeBar(); startTimer(); }
+    function startTimer(){ stopTimer(); timer = setInterval(()=>{ timeLeft-=1; updateTimeBar(); if(timeLeft<=0){ clearInterval(timer); timer=null; onTimeUp(); } },1000); }
+    function stopTimer(){ if(timer){ clearInterval(timer); timer=null; } }
+    function onTimeUp(){ // treat as wrong
+      playWrong(); Array.from(optsEl.children).forEach((b,i)=>{ b.disabled=true; }); // highlight correct
+      const q = QUESTIONS[currentIndex]; if(q){ Array.from(optsEl.children)[q.a].style.border='2px solid rgba(34,197,94,0.6)'; }
+      setTimeout(()=>{ currentIndex++; if(currentIndex<QUESTIONS.length){ showQuestion(); } else { endGame(); } },1000);
+    }
+    function updateTimeBar(){ const pct = Math.max(0, (timeLeft/TIME_PER_QUESTION)*100); timeBar.style.width = pct+'%'; }
+
+    /*************** CONTROL INICIAL Y FINAL ****************/
+    startBtn.addEventListener('click', ()=>{ audioCtx.resume().then(()=>{ startBgMusic(); startBtn.classList.add('hidden'); pauseBtn.classList.remove('hidden'); showQuestion(); }); });
+    pauseBtn.addEventListener('click', ()=>{ if(audioCtx.state==='running'){ audioCtx.suspend(); pauseBtn.textContent='Reanudar'; stopBgMusic(); } else { audioCtx.resume().then(()=>{ pauseBtn.textContent='Pausa'; startBgMusic(); }); } });
+
+    function endGame(){ stopTimer(); stopBgMusic(); // show modal
+      resultTitle.textContent = '🎉 ¡Juego terminado!'; resultBody.textContent = `Puntaje total: ${totalScore}/30\nDetalle por nivel: ${levelScores.join(' / ')}`; resultModal.classList.remove('hidden'); }
+
+    playAgainBtn.addEventListener('click', ()=>{ resultModal.classList.add('hidden'); restartAll(); });
+
+    downloadBtn.addEventListener('click', ()=>{ // generar CSV
+      const rows = [['Nivel','Puntaje']]; levelScores.forEach((s,i)=>rows.push([i+1,s])); rows.push(['Total',totalScore]); const csv = rows.map(r=>r.join(',')).join('\n'); const blob = new Blob([csv],{type:'text/csv'}); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='resultados_quiz.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
+    document.getElementById('restartBtn').addEventListener('click', restartAll);
+    function restartAll(){ stopTimer(); stopBgMusic(); currentIndex=0; totalScore=0; levelScores = Array(levels).fill(0); startBtn.classList.remove('hidden'); pauseBtn.classList.add('hidden'); resultModal.classList.add('hidden'); updateDisplays(); qText.textContent='Presioná Comenzar para iniciar'; clearOptions(); }
+
+    /*************** INICIALIZACIÓN ****************/
+    vol.addEventListener('input', ()=>{ masterGain.gain.value = vol.value; });
+    // inicializar displays
+    updateDisplays();
+
+  </script>
+</body>
+</html>
